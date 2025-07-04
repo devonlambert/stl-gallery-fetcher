@@ -15,6 +15,9 @@ headers = {
     "Content-Type": "application/json"
 }
 
+print(f"🔐 Using Basic Auth with username: {username}")
+print(f"🧾 Encoded credentials (truncated): {encoded_credentials[:10]}...")
+
 # GraphQL endpoint
 url = "https://cults3d.com/graphql"
 
@@ -53,13 +56,21 @@ for term in search_terms:
         }
     }
 
-    response = requests.post(url, json={"query": query, "variables": variables}, headers=headers)
-    print(f"Status code for '{term}': {response.status_code}")
+    try:
+        response = requests.post(url, json={"query": query, "variables": variables}, headers=headers)
+        print(f"Status code for '{term}': {response.status_code}")
+        if response.status_code == 401:
+            print(f"❌ Unauthorized access. Headers sent: {headers}")
+            print(f"🔓 Raw response for '{term}':\n{response.text}")
+    except Exception as e:
+        print(f"❌ Request failed for '{term}': {e}")
+        continue
 
     try:
         data = response.json()
     except Exception as e:
         print(f"❌ Error parsing JSON for '{term}': {e}")
+        print(f"🧾 Raw response text:\n{response.text}")
         continue
 
     if "errors" in data:
