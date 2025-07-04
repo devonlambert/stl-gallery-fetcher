@@ -1,0 +1,41 @@
+# --- Node-related ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnpm-debug.log*
+
+# --- System junk (macOS/Windows) ---
+.DS_Store
+Thumbs.db
+Icon?
+._*
+
+# --- Editor/IDE configs ---
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# --- Environment & secret files ---
+.env
+.env.*
+*.local
+*.env.*.local
+
+# --- Temporary / cache files ---
+*.log
+*.tmp
+*.bak
+*.swp
+*.lock
+*.cache
+*.gz
+
+# --- Tests & builds ---
+coverage/
+dist/
+build/
+__tests__/
+test/
