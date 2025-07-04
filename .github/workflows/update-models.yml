@@ -30,6 +30,7 @@ jobs:
 
       - name: Run Cults3D fetch script
         env:
+          CULTS_API_USERNAME: ${{ secrets.CULTS_API_USERNAME }}
           CULTS_API_KEY: ${{ secrets.CULTS_API_KEY }}
         run: |
           python fetch_cults_models.py
