@@ -7,6 +7,10 @@ import base64
 username = os.getenv("CULTS_API_USERNAME")
 password = os.getenv("CULTS_API_KEY")
 
+if not username or not password:
+    print("❌ CULTS_API_USERNAME or CULTS_API_KEY is missing.")
+    exit(1)
+
 credentials = f"{username}:{password}"
 encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
 
@@ -21,47 +25,34 @@ print(f"🧾 Encoded credentials (truncated): {encoded_credentials[:10]}...")
 # GraphQL endpoint
 url = "https://cults3d.com/graphql"
 
-# GraphQL query
-query = '''
-query Search($input: SearchInput!) {
-  search(input: $input) {
-    nodes {
-      ... on Product {
-        id
-        name
-        slug
-        coverUrl
-        tags {
-          name
-        }
-        downloadUrl
-      }
-    }
-  }
-}
-'''
-
 # Keywords to search for
 search_terms = ["anime", "rpg", "video game", "dnd", "final fantasy"]
 models = []
 
 # Query loop with debug output
 for term in search_terms:
-    print(f"🔍 Searching for term: '{term}'")
-    variables = {
-        "input": {
-            "q": term,
-            "types": ["product"],
-            "sort": "LATEST"
-        }
+    print(f"\n🔍 Searching for term: '{term}'")
+    
+    graphql_query = {
+        "query": f'''
+        query {{
+          search(query: "{term}", type: PRODUCT, sort: LATEST) {{
+            id
+            name
+            slug
+            coverUrl
+            tags {{
+              name
+            }}
+            downloadUrl
+          }}
+        }}
+        '''
     }
 
     try:
-        response = requests.post(url, json={"query": query, "variables": variables}, headers=headers)
+        response = requests.post(url, json=graphql_query, headers=headers)
         print(f"Status code for '{term}': {response.status_code}")
-        if response.status_code == 401:
-            print(f"❌ Unauthorized access. Headers sent: {headers}")
-            print(f"🔓 Raw response for '{term}':\n{response.text}")
     except Exception as e:
         print(f"❌ Request failed for '{term}': {e}")
         continue
@@ -77,11 +68,11 @@ for term in search_terms:
         print(f"⚠️ GraphQL errors for '{term}': {data['errors']}")
         continue
 
-    nodes = data.get("data", {}).get("search", {}).get("nodes", [])
-    print(f"✅ Found {len(nodes)} nodes for '{term}'")
+    results = data.get("data", {}).get("search", [])
+    print(f"✅ Found {len(results)} items for '{term}'")
 
     added = 0
-    for item in nodes:
+    for item in results:
         if not item.get("downloadUrl"):
             continue
         models.append({
@@ -101,7 +92,7 @@ for model in models:
         unique_models.append(model)
         seen.add(model["link"])
 
-print(f"🧮 Total unique models: {len(unique_models)}")
+print(f"\n🧮 Total unique models: {len(unique_models)}")
 
 # Save to models.json
 with open("models.json", "w") as f:
