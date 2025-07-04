@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Link Master Sword",
+    "image": "https://example.com/images/linksword.jpg",
+    "tags": ["Zelda", "Gaming", "Weapon"],
+    "link": "https://cults3d.com/en/models/links-master-sword"
+  },
+  {
+    "title": "Pikachu Figurine",
+    "image": "https://example.com/images/pikachu.jpg",
+    "tags": ["Pokemon", "Anime", "Miniature"],
+    "link": "https://cults3d.com/en/models/pikachu-figurine"
+  }
+]
