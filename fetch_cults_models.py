@@ -26,7 +26,7 @@ print(f"🧾 Encoded credentials (truncated): {encoded_credentials[:10]}...")
 url = "https://cults3d.com/graphql"
 
 # Keywords to search
-search_terms = ["anime", "rpg", "video game", "dnd", "final fantasy"]
+search_terms = ["anime", "rpg", "video game", "dnd", ]
 models = []
 
 # Loop through search terms and collect data
