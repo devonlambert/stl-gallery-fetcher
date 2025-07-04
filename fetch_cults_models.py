@@ -25,67 +25,83 @@ print(f"🧾 Encoded credentials (truncated): {encoded_credentials[:10]}...")
 # GraphQL endpoint
 url = "https://cults3d.com/graphql"
 
-# GraphQL query: fetch user’s own models
-graphql_query = {
-    "query": '''
-    {
-      myself {
-        creationsBatch(limit: 50, offset: 0) {
-          results {
-            name(locale: EN)
-            url(locale: EN)
-            illustrationImageUrl
-            downloadsCount
-            viewsCount
-            totalSalesAmount(currency: USD) { cents }
-            blueprints {
-              fileUrl
-              imageUrl
-            }
-          }
-        }
-      }
-    }
-    '''
-}
-
-# Fetch the data
-print("📡 Sending request to Cults3D API...")
-response = requests.post(url, json=graphql_query, headers=headers)
-print(f"📬 Status Code: {response.status_code}")
-
-try:
-    data = response.json()
-except Exception as e:
-    print(f"❌ Failed to parse JSON: {e}")
-    print(response.text)
-    exit(1)
-
-if "errors" in data:
-    print(f"⚠️ GraphQL Errors: {data['errors']}")
-    exit(1)
-
-creations = data.get("data", {}).get("myself", {}).get("creationsBatch", {}).get("results", [])
-print(f"✅ Retrieved {len(creations)} creations")
-
-# Parse into models.json format
+# Keywords to search
+search_terms = ["anime", "rpg", "video game", "dnd", "final fantasy"]
 models = []
-for item in creations:
-    models.append({
-        "title": item.get("name"),
-        "image": item.get("illustrationImageUrl"),
-        "tags": ["my creations"],  # Placeholder tag
-        "link": item.get("url"),
-        "downloads": item.get("downloadsCount", 0),
-        "views": item.get("viewsCount", 0),
-        "sales_cents": item.get("totalSalesAmount", {}).get("cents", 0),
-        "stl_file_url": item.get("blueprints", [{}])[0].get("fileUrl"),
-        "stl_image_url": item.get("blueprints", [{}])[0].get("imageUrl")
-    })
+
+# Loop through search terms and collect data
+for term in search_terms:
+    print(f"\n🔍 Searching for public models with term: '{term}'")
+
+    graphql_query = {
+        "query": f'''
+        {{
+          creationsSearchBatch(query: "{term}", limit: 20) {{
+            total
+            results {{
+              name(locale: EN)
+              description(locale: EN)
+              shortUrl
+              illustrationImageUrl
+              downloadsCount
+              viewsCount
+              creator {{
+                name
+              }}
+            }}
+          }}
+        }}
+        '''
+    }
+
+    try:
+        response = requests.post(url, json=graphql_query, headers=headers)
+        print(f"Status code for '{term}': {response.status_code}")
+    except Exception as e:
+        print(f"❌ Request failed for '{term}': {e}")
+        continue
+
+    try:
+        data = response.json()
+    except Exception as e:
+        print(f"❌ Failed to parse JSON for '{term}': {e}")
+        print(f"🧾 Raw response text:\n{response.text}")
+        continue
+
+    if "errors" in data:
+        print(f"⚠️ GraphQL errors for '{term}': {data['errors']}")
+        continue
+
+    results = data.get("data", {}).get("creationsSearchBatch", {}).get("results", [])
+    print(f"✅ Found {len(results)} models for '{term}'")
+
+    added = 0
+    for item in results:
+        models.append({
+            "title": item.get("name"),
+            "description": item.get("description"),
+            "image": item.get("illustrationImageUrl"),
+            "link": item.get("shortUrl"),
+            "tags": [term],
+            "downloads": item.get("downloadsCount", 0),
+            "views": item.get("viewsCount", 0),
+            "creator": item.get("creator", {}).get("name")
+        })
+        added += 1
+    print(f"➕ Added {added} models for '{term}'")
+
+# Deduplicate by link
+seen = set()
+unique_models = []
+for m in models:
+    if m["link"] not in seen:
+        unique_models.append(m)
+        seen.add(m["link"])
+
+print(f"\n🧮 Final unique models: {len(unique_models)}")
 
 # Write to models.json
-print(f"💾 Writing {len(models)} models to models.json")
 with open("models.json", "w") as f:
-    json.dump(models, f, indent=2)
+    json.dump(unique_models, f, indent=2)
 
-print("✅ Done.")
+print("✅ models.json written.")
