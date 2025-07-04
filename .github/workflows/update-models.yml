@@ -9,6 +9,9 @@ on:
       - 'fetch_cults_models.py'
       - '.github/workflows/update-models.yml'
 
+permissions:
+  contents: write
+
 jobs:
   fetch-cults-models:
     runs-on: ubuntu-latest
