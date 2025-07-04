@@ -1,13 +1,22 @@
 import requests
 import json
 import os
+import base64
 
-# Endpoint and headers
-url = "https://cults3d.com/graphql"
+# Prepare Basic Auth Header
+username = os.getenv("CULTS_API_USERNAME")
+password = os.getenv("CULTS_API_KEY")
+
+credentials = f"{username}:{password}"
+encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+
 headers = {
-    "Authorization": f"Bearer {os.getenv('CULTS_API_KEY')}",
+    "Authorization": f"Basic {encoded_credentials}",
     "Content-Type": "application/json"
 }
+
+# GraphQL endpoint
+url = "https://cults3d.com/graphql"
 
 # GraphQL query
 query = '''
@@ -29,11 +38,11 @@ query Search($input: SearchInput!) {
 }
 '''
 
-# List of geek-centric keywords to search
+# Keywords to search for
 search_terms = ["anime", "rpg", "video game", "dnd", "final fantasy"]
 models = []
 
-# Query loop with debugging
+# Query loop with debug output
 for term in search_terms:
     print(f"🔍 Searching for term: '{term}'")
     variables = {
@@ -83,6 +92,6 @@ for model in models:
 
 print(f"🧮 Total unique models: {len(unique_models)}")
 
-# Write to models.json
+# Save to models.json
 with open("models.json", "w") as f:
     json.dump(unique_models, f, indent=2)
