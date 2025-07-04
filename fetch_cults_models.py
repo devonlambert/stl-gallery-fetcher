@@ -25,75 +25,67 @@ print(f"🧾 Encoded credentials (truncated): {encoded_credentials[:10]}...")
 # GraphQL endpoint
 url = "https://cults3d.com/graphql"
 
-# Keywords to search for
-search_terms = ["anime", "rpg", "video game", "dnd", "final fantasy"]
-models = []
-
-# Query loop with debug output
-for term in search_terms:
-    print(f"\n🔍 Searching for term: '{term}'")
-    
-    graphql_query = {
-        "query": f'''
-        query {{
-          search(query: "{term}", type: PRODUCT, sort: LATEST) {{
-            id
-            name
-            slug
-            coverUrl
-            tags {{
-              name
-            }}
-            downloadUrl
-          }}
-        }}
-        '''
+# GraphQL query: fetch user’s own models
+graphql_query = {
+    "query": '''
+    {
+      myself {
+        creationsBatch(limit: 50, offset: 0) {
+          results {
+            name(locale: EN)
+            url(locale: EN)
+            illustrationImageUrl
+            downloadsCount
+            viewsCount
+            totalSalesAmount(currency: USD) { cents }
+            blueprints {
+              fileUrl
+              imageUrl
+            }
+          }
+        }
+      }
     }
+    '''
+}
 
-    try:
-        response = requests.post(url, json=graphql_query, headers=headers)
-        print(f"Status code for '{term}': {response.status_code}")
-    except Exception as e:
-        print(f"❌ Request failed for '{term}': {e}")
-        continue
+# Fetch the data
+print("📡 Sending request to Cults3D API...")
+response = requests.post(url, json=graphql_query, headers=headers)
+print(f"📬 Status Code: {response.status_code}")
 
-    try:
-        data = response.json()
-    except Exception as e:
-        print(f"❌ Error parsing JSON for '{term}': {e}")
-        print(f"🧾 Raw response text:\n{response.text}")
-        continue
+try:
+    data = response.json()
+except Exception as e:
+    print(f"❌ Failed to parse JSON: {e}")
+    print(response.text)
+    exit(1)
 
-    if "errors" in data:
-        print(f"⚠️ GraphQL errors for '{term}': {data['errors']}")
-        continue
+if "errors" in data:
+    print(f"⚠️ GraphQL Errors: {data['errors']}")
+    exit(1)
 
-    results = data.get("data", {}).get("search", [])
-    print(f"✅ Found {len(results)} items for '{term}'")
+creations = data.get("data", {}).get("myself", {}).get("creationsBatch", {}).get("results", [])
+print(f"✅ Retrieved {len(creations)} creations")
 
-    added = 0
-    for item in results:
-        if not item.get("downloadUrl"):
-            continue
-        models.append({
-            "title": item["name"],
-            "image": item["coverUrl"],
-            "tags": [tag["name"] for tag in item.get("tags", [])],
-            "link": item["downloadUrl"]
-        })
-        added += 1
-    print(f"➕ Added {added} models for '{term}'")
+# Parse into models.json format
+models = []
+for item in creations:
+    models.append({
+        "title": item.get("name"),
+        "image": item.get("illustrationImageUrl"),
+        "tags": ["my creations"],  # Placeholder tag
+        "link": item.get("url"),
+        "downloads": item.get("downloadsCount", 0),
+        "views": item.get("viewsCount", 0),
+        "sales_cents": item.get("totalSalesAmount", {}).get("cents", 0),
+        "stl_file_url": item.get("blueprints", [{}])[0].get("fileUrl"),
+        "stl_image_url": item.get("blueprints", [{}])[0].get("imageUrl")
+    })
 
-# Remove duplicates
-seen = set()
-unique_models = []
-for model in models:
-    if model["link"] not in seen:
-        unique_models.append(model)
-        seen.add(model["link"])
-
-print(f"\n🧮 Total unique models: {len(unique_models)}")
-
-# Save to models.json
+# Write to models.json
+print(f"💾 Writing {len(models)} models to models.json")
 with open("models.json", "w") as f:
-    json.dump(unique_models, f, indent=2)
+    json.dump(models, f, indent=2)
+
+print("✅ Done.")
