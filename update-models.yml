@@ -1,39 +1,39 @@
-name: Update 3D Models JSON
+name: Fetch Cults3D STL Models
 
 on:
+  push:
+    paths:
+      - 'fetch_cults_models.py'
   workflow_dispatch:
   schedule:
-    - cron: '0 12 * * 1'  # Every Monday at noon UTC
+    - cron: '0 12 * * 1' # Every Monday at noon UTC
 
 jobs:
-  build:
+  fetch-cults-models:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Generate models.json
-      run: |
-        echo '[
-          {
-            "title": "Link Master Sword",
-            "image": "https://example.com/images/linksword.jpg",
-            "tags": ["Zelda", "Gaming", "Weapon"],
-            "link": "https://cults3d.com/en/models/links-master-sword"
-          },
-          {
-            "title": "Pikachu Figurine",
-            "image": "https://example.com/images/pikachu.jpg",
-            "tags": ["Pokemon", "Anime", "Miniature"],
-            "link": "https://cults3d.com/en/models/pikachu-figurine"
-          }
-        ]' > models.json
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Commit and Push
-      run: |
-        git config user.name github-actions
-        git config user.email github-actions@users.noreply.github.com
-        git add models.json
-        git commit -m "Auto-update models.json"
-        git push
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Cults3D fetch script
+        env:
+          CULTS_API_KEY: ${{ secrets.CULTS_API_KEY }}
+        run: |
+          python fetch_cults_models.py
+
+      - name: Commit and push models.json
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add models.json
+          git commit -m "Auto-update models.json from Cults3D"
+          git push
