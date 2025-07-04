@@ -1,12 +1,13 @@
-name: Fetch Cults3D STL Models
+name: Update Models
 
 on:
-  push:
+  workflow_dispatch: # allow manual runs
+  schedule:
+    - cron: '0 12 * * 1' # every Monday at noon UTC
+  push: # run automatically when you update these files
     paths:
       - 'fetch_cults_models.py'
-  workflow_dispatch:
-  schedule:
-    - cron: '0 12 * * 1' # Every Monday at noon UTC
+      - '.github/workflows/update-models.yml'
 
 jobs:
   fetch-cults-models:
@@ -35,5 +36,5 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@users.noreply.github.com
           git add models.json
-          git commit -m "Auto-update models.json from Cults3D"
+          git diff --cached --quiet || git commit -m "Auto-update models.json from Cults3D"
           git push
