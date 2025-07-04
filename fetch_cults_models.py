@@ -45,9 +45,6 @@ for term in search_terms:
               illustrationImageUrl
               downloadsCount
               viewsCount
-              creator {{
-                name
-              }}
             }}
           }}
         }}
@@ -84,8 +81,7 @@ for term in search_terms:
             "link": item.get("shortUrl"),
             "tags": [term],
             "downloads": item.get("downloadsCount", 0),
-            "views": item.get("viewsCount", 0),
-            "creator": item.get("creator", {}).get("name")
+            "views": item.get("viewsCount", 0)
         })
         added += 1
     print(f"➕ Added {added} models for '{term}'")
